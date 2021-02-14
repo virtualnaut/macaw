@@ -27,6 +27,7 @@ class MacawServer {
         this._mc_server = null;
         this._players = [];
         this._timer = null;
+        this._stop_instance = false;
 
         this._app.listen(this._port, () => {
             this._log(`Macaw Server connected on port ${this._port}.`);
@@ -81,6 +82,9 @@ class MacawServer {
         else if (line.includes('For help, type "help"')) {
             this._startShutdownTimer();
         }
+        else if (line.includes('Closing Server') && (this._stop_instance)) {
+            const shutdown = spawn('sudo', ['shutdown', 'now']);
+        }
     
         if (player !== null) {
             const player_index = this._players.indexOf(player);
@@ -116,16 +120,16 @@ class MacawServer {
         this._mc_server.stdin.write('stop\n');
     }
     
-    
     _fullShutdown() {
         this._MCShutdown();
+        this._stop_instance = true;
     }
     
     _startShutdownTimer() {
         this._log(`Instance will shutdown in ${TIMEOUT / 1000} seconds.`);
         this._timer = setTimeout(() => {
             this._log('Instance stopping...')
-            this._MCShutdown()
+            this._fullShutdown()
         }, TIMEOUT);
     }
     
