@@ -28,7 +28,7 @@ let players = [];
 let timer = null;
 
 app.listen(port, () => {
-    console.log(`[MACAW ${new Date().toLocaleTimeString()} INFO]: Macaw Server connected on port ${port}.`);
+    log(`Macaw Server connected on port ${port}.`);
 
     // Start the Minecraft server.
     mc_server = spawn('sudo', ['java', `-Xmx${MC_SERVER_MEMORY}G`, '-jar', MC_JARFILE_NAME, 'nogui']);
@@ -40,9 +40,7 @@ app.listen(port, () => {
         gotLogLine(line);
     });
 
-    console.log(`[MACAW ${new Date().toLocaleTimeString()} INFO]: Minecraft server process spawned.`);
-
-    startShutdownTimer();
+    log('Minecraft server process spawned.');
 });
 
 /* --- Routes --- */
@@ -79,6 +77,9 @@ function gotLogLine(data) {
         player = line.slice(17, line.indexOf(' left the game'));
         action = ACTION.leaving;
     }
+    else if (line.includes('Time elapsed: ')) {
+        startShutdownTimer();
+    }
 
     if (player !== null) {
         const player_index = players.indexOf(player);
@@ -99,7 +100,7 @@ function gotLogLine(data) {
             }
         }
 
-        console.log(`[MACAW ${new Date().toLocaleTimeString()} INFO]: Players: ${players}`);
+        log(`Players: ${players}`);
 
         if (players.length === 0) {
             startShutdownTimer();
@@ -119,16 +120,20 @@ function fullShutdown() {
 }
 
 function startShutdownTimer() {
-    console.log(`[MACAW ${new Date().toLocaleTimeString()} INFO]: Instance will shutdown in ${TIMEOUT*1000} seconds.`);
+    log(`Instance will shutdown in ${TIMEOUT / 1000} seconds.`);
     timer = setTimeout(() => {
-        console.log(`[MACAW ${new Date().toLocaleTimeString()} INFO]: Instance stopping...`);
+        log('Instance stopping...')
         MCShutdown()
     }, TIMEOUT);
 }
 
 function clearShutdownTimer() {
     clearTimeout(timer);
-    console.log(`[MACAW ${new Date().toLocaleTimeString()} INFO]: Instance shutdown aborted.`);
+    log('Instance shutdown aborted.');
+}
+
+function log(message) {
+    console.log(`[${new Date().toLocaleTimeString().slice(0, -3)} INFO]: <MACAW> ${message}`);
 }
 
 /*
