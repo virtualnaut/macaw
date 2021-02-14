@@ -28,41 +28,41 @@ class MacawServer {
         this._players = [];
         this._timer = null;
 
-        app.listen(this.port, () => {
-            this.log(`Macaw Server connected on port ${port}.`);
+        this._app.listen(this._port, () => {
+            this._log(`Macaw Server connected on port ${this._port}.`);
         
             // Start the Minecraft server.
-            mc_server = spawn('sudo', ['java', `-Xmx${MC_SERVER_MEMORY}G`, '-jar', MC_JARFILE_NAME, 'nogui']);
+            this._mc_server = spawn('sudo', ['java', `-Xmx${MC_SERVER_MEMORY}G`, '-jar', MC_JARFILE_NAME, 'nogui']);
         
             // Echo the server output
-            mc_server.stdout.on('data', data => {
-                line = String(data).slice(0, -1);
+            this._mc_server.stdout.on('data', data => {
+                let line = String(data).slice(0, -1);
                 console.log(line);
-                this.gotLogLine(line);
+                this._gotLogLine(line);
             });
         
-            this.log('Minecraft server process spawned.');
+            this._log('Minecraft server process spawned.');
         });
         
         /* --- Routes --- */
 
         // Stop the Minecraft server
-        app.get('/stop', (req, res) => {
-            this.MCShutdown();
+        this._app.get('/stop', (req, res) => {
+            this._MCShutdown();
         });
         
         // Start the Minecraft server
-        app.get('/start', (req, res) => {
+        this._app.get('/start', (req, res) => {
             //
         });
         
         // Stop the AWS EC2 instance.
-        app.get('/kill', (req, res) => {
-            this.fullShutdown();
+        this._app.get('/kill', (req, res) => {
+            this._fullShutdown();
         });
     }
 
-    gotLogLine(data) {
+    _gotLogLine(data) {
         const line = String(data);
     
         let player = null;
@@ -79,66 +79,67 @@ class MacawServer {
             action = ACTION.leaving;
         }
         else if (line.includes('For help, type "help"')) {
-            this.startShutdownTimer();
+            this._startShutdownTimer();
         }
     
         if (player !== null) {
-            const player_index = this.players.indexOf(player);
+            const player_index = this._players.indexOf(player);
     
             switch (action) {
                 case ACTION.leaving: {
                     if (player_index >= -1) {
-                        this.players.splice(player_index, 1);
+                        this._players.splice(player_index, 1);
                     }
     
                     break;
                 }
                 case ACTION.joining: {
                     if (player_index === -1) {
-                        this.players.push(player);
+                        this._players.push(player);
                     }
                     break;
                 }
             }
     
-            log(`Players: ${this.players}`);
+            this._log(`Players: ${this._players}`);
     
-            if (this.players.length === 0) {
-                this.startShutdownTimer();
+            if (this._players.length === 0) {
+                this._startShutdownTimer();
             }
             else {
-                this.clearShutdownTimer();
+                this._clearShutdownTimer();
             }
         }
     }
     
-    MCShutdown() {
-        mc_server.stdin.write('stop\n');
+    _MCShutdown() {
+        this._mc_server.stdin.write('stop\n');
     }
     
-    fullShutdown() {
-        this.MCShutdown();
+    
+    _fullShutdown() {
+        this._MCShutdown();
     }
     
-    startShutdownTimer() {
-        this.log(`Instance will shutdown in ${TIMEOUT / 1000} seconds.`);
-        this.timer = setTimeout(() => {
-            this.log('Instance stopping...')
-            this.MCShutdown()
+    _startShutdownTimer() {
+        this._log(`Instance will shutdown in ${TIMEOUT / 1000} seconds.`);
+        this._timer = setTimeout(() => {
+            this._log('Instance stopping...')
+            this._MCShutdown()
         }, TIMEOUT);
     }
     
-    clearShutdownTimer() {
-        clearTimeout(this.timer);
-        this.log('Instance shutdown aborted.');
+    _clearShutdownTimer() {
+        clearTimeout(this._timer);
+        this._log('Instance shutdown aborted.');
     }
     
-    log(message) {
+    _log(message) {
         console.log(`[${new Date().toLocaleTimeString().slice(0, -3)} INFO]: <MACAW> ${message}`);
     }
 }
 
-server = MacawServer();
+server = new MacawServer();
 
 /*
 var spawn = require('child_process').spawn,
