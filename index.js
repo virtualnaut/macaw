@@ -20,10 +20,10 @@ app.listen(port, () => {
     console.log(`[MACAW ${new Date().toLocaleTimeString()} INFO]: Macaw Server connected on port ${port}.`);
 
     // Start the Minecraft server.
-    mc_server = spawn('java', [`-Xmx${MC_SERVER_MEMORY}G`, '-jar', MC_JARFILE_NAME, 'nogui']);
+    mc_server = spawn('sudo', ['java', `-Xmx${MC_SERVER_MEMORY}G`, '-jar', MC_JARFILE_NAME, 'nogui']);
 
     // Echo the server output
-    mc_server.stdout.on('data', data => console.log(String(data)));
+    mc_server.stdout.on('data', data => console.log(String(data).slice(0, -1)));
 
     console.log(`[MACAW ${new Date().toLocaleTimeString()} INFO]: Minecraft server process spawned.`);
 });
