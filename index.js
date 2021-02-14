@@ -31,7 +31,7 @@ app.listen(port, () => {
 /* --- Routes --- */
 // Stop the Minecraft server
 app.get('/stop', (req, res) => {
-    //
+    mc_server.stdin.write('^C\n');
 });
 
 // Start the Minecraft server
