@@ -21,6 +21,10 @@ app.listen(port, () => {
 
     // Start the Minecraft server.
     mc_server = spawn('java', [`-Xmx${MC_SERVER_MEMORY}G`, '-jar', MC_JARFILE_NAME, 'nogui']);
+
+    // Echo the server output
+    mc_server.stdout.on('data', data => console.log(String(data)));
+
     console.log(`[MACAW ${new Date().toLocaleTimeString()} INFO]: Minecraft server process spawned.`);
 });
 
