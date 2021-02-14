@@ -1,0 +1,22 @@
+{
+  "name": "macaw",
+  "version": "1.0.0",
+  "description": "Node JS server to run in an AWS instance that watches Minecraft console output and shuts down the instance when the server isn't being used. ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/virtualnaut/macaw.git"
+  },
+  "author": "virtualnaut",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/virtualnaut/macaw/issues"
+  },
+  "homepage": "https://github.com/virtualnaut/macaw#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
