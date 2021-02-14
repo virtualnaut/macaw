@@ -64,16 +64,17 @@ function gotLogLine(data) {
 
     if (line.includes('joined the game')) {
         // Player connected.
-        player = line.slice(17, line.indexOf('joined the game'));
+        player = line.slice(17, line.indexOf(' joined the game'));
         action = ACTION.joining;
     }
     else if (line.includes('left the game')) {
         // Player disconnected.
-        player = line.slice(17, line.indexOf('left the game'));
+        player = line.slice(17, line.indexOf(' left the game'));
         action = ACTION.leaving;
     }
 
     if (player !== null) {
+        console.log(`[MACAW ${new Date().toLocaleTimeString()} INFO]: Player Event: ${player}`);
         const player_index = players.indexOf(player);
 
         switch (action) {
@@ -85,9 +86,10 @@ function gotLogLine(data) {
                 break;
             }
             case ACTION.joining: {
-                if (player_index === 1) {
+                if (player_index === -1) {
                     players.push(player);
                 }
+                break;
             }
         }
 
