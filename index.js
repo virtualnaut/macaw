@@ -11,6 +11,10 @@ const MC_SERVER_MEMORY = 4;
 // Name of the Minecraft server JAR file.
 const MC_JARFILE_NAME = 'mc_server_paper_1_16_5.jar'
 
+const TIMEOUT = 20000
+
+// Timeout after a player
+
 const ACTION = {
     leaving: 0,
     joining: 1
@@ -21,6 +25,7 @@ const port = 8080
 
 let mc_server = null;
 let players = [];
+let timer = null;
 
 app.listen(port, () => {
     console.log(`[MACAW ${new Date().toLocaleTimeString()} INFO]: Macaw Server connected on port ${port}.`);
@@ -36,12 +41,14 @@ app.listen(port, () => {
     });
 
     console.log(`[MACAW ${new Date().toLocaleTimeString()} INFO]: Minecraft server process spawned.`);
+
+    startShutdownTimer();
 });
 
 /* --- Routes --- */
 // Stop the Minecraft server
 app.get('/stop', (req, res) => {
-    mc_server.stdin.write('stop\n');
+    MCShutdown();
 });
 
 // Start the Minecraft server
@@ -51,7 +58,7 @@ app.get('/start', (req, res) => {
 
 // Stop the AWS EC2 instance.
 app.get('/kill', (req, res) => {
-    //
+    fullShutdown();
 });
 
 /* --- Callbacks --- */
@@ -74,7 +81,6 @@ function gotLogLine(data) {
     }
 
     if (player !== null) {
-        console.log(`[MACAW ${new Date().toLocaleTimeString()} INFO]: Player Event: ${player}`);
         const player_index = players.indexOf(player);
 
         switch (action) {
@@ -94,7 +100,35 @@ function gotLogLine(data) {
         }
 
         console.log(`[MACAW ${new Date().toLocaleTimeString()} INFO]: Players: ${players}`);
+
+        if (players.length === 0) {
+            startShutdownTimer();
+        }
+        else {
+            clearShutdownTimer();
+        }
     }
+}
+
+function MCShutdown() {
+    mc_server.stdin.write('stop\n');
+}
+
+function fullShutdown() {
+    MCShutdown();
+}
+
+function startShutdownTimer() {
+    console.log(`[MACAW ${new Date().toLocaleTimeString()} INFO]: Instance will shutdown in ${TIMEOUT*1000} seconds.`);
+    timer = setTimeout(() => {
+        console.log(`[MACAW ${new Date().toLocaleTimeString()} INFO]: Instance stopping...`);
+        MCShutdown()
+    }, TIMEOUT);
+}
+
+function clearShutdownTimer() {
+    clearTimeout(timer);
+    console.log(`[MACAW ${new Date().toLocaleTimeString()} INFO]: Instance shutdown aborted.`);
 }
 
 /*
