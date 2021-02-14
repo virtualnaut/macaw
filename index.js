@@ -14,7 +14,7 @@ const MC_JARFILE_NAME = 'mc_server_paper_1_16_5.jar'
 const app = express();
 const port = 8080
 
-const mc_server = null;
+let mc_server = null;
 
 app.listen(port, () => {
     console.log(`[MACAW ${new Date().toLocaleTimeString()} INFO]: Macaw Server connected on port ${port}.`);
