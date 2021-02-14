@@ -78,7 +78,7 @@ class MacawServer {
             player = line.slice(17, line.indexOf(' left the game'));
             action = ACTION.leaving;
         }
-        else if (line.includes('Time elapsed: ')) {
+        else if (line.includes('For help, type "help"')) {
             this.startShutdownTimer();
         }
     
