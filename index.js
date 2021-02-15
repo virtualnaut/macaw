@@ -2,6 +2,9 @@ const express = require('express');
 //const bodyParser = require('body-parser');
 var spawn = require('child_process').spawn;
 
+const fs = require('fs')
+const https = require('https')
+
 //var urlencodedParser = bodyParser.urlencoded({ extended: false });
 //const jsonParser = bodyParser.json();
 
@@ -12,12 +15,19 @@ const MC_SERVER_MEMORY = 4;
 const MC_JARFILE_NAME = 'mc_server_paper_1_16_5.jar'
 
 // Timeout to stop the instance after.
-const TIMEOUT = 20000
+const TIMEOUT = 300000
 
 const ACTION = {
     leaving: 0,
     joining: 1
 };
+
+const STATUS = {
+    NOT_RUNNING: 'not running',
+    RUNNING: 'running',
+    STARTING: 'starting',
+    STOPPING: 'stopping'
+}
 
 class MacawServer {
     constructor() {
@@ -27,14 +37,21 @@ class MacawServer {
         this._mc_server = null;
         this._players = [];
         this._timer = null;
-        this._stop_instance = false;
+        this._mc_status = STATUS.NOT_RUNNING;
 
-        this._app.listen(this._port, () => {
+        this._stop_instance = false;
+        
+        https.createServer({
+            key: fs.readFileSync('/home/ec2-user/macaw/cert/server.key'),
+            cert: fs.readFileSync('/home/ec2-user/macaw/cert/server.cert')
+        }, this._app).listen(this._port, () => {
+
             this._log(`Macaw Server connected on port ${this._port}.`);
         
             // Start the Minecraft server.
             this._mc_server = spawn('sudo', ['java', `-Xmx${MC_SERVER_MEMORY}G`, '-jar', MC_JARFILE_NAME, 'nogui']);
-        
+            this._mc_status = STATUS.STARTING;
+
             // Echo the server output
             this._mc_server.stdout.on('data', data => {
                 let line = String(data).slice(0, -1);
@@ -61,6 +78,16 @@ class MacawServer {
         this._app.get('/kill', (req, res) => {
             this._fullShutdown();
         });
+
+        // Get the Minecraft server status.
+        this._app.get('/status', (req, res) => {
+            const status = {
+                status: this._mc_status,
+                players: this._players
+            }
+
+            res.json(status);
+        })
     }
 
     _gotLogLine(data) {
@@ -74,16 +101,23 @@ class MacawServer {
             player = line.slice(17, line.indexOf(' joined the game'));
             action = ACTION.joining;
         }
+
         else if (line.includes('left the game')) {
             // Player disconnected.
             player = line.slice(17, line.indexOf(' left the game'));
             action = ACTION.leaving;
         }
+
         else if (line.includes('For help, type "help"')) {
+            this._mc_status = STATUS.RUNNING;
             this._startShutdownTimer();
         }
+
         else if (line.includes('Closing Server') && (this._stop_instance)) {
-            const shutdown = spawn('sudo', ['shutdown', 'now']);
+            this._mc_status = STATUS.NOT_RUNNING;
+            if (this._stop_instance) {
+                spawn('sudo', ['shutdown', 'now']);
+            }
         }
     
         if (player !== null) {
@@ -118,7 +152,9 @@ class MacawServer {
     
     _MCShutdown() {
         this._mc_server.stdin.write('stop\n');
+        this._mc_status = STATUS.STOPPING;
     }
+    
     
     _fullShutdown() {
         this._MCShutdown();
