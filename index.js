@@ -1,9 +1,11 @@
 const express = require('express');
-//const bodyParser = require('body-parser');
+const bodyParser = require('body-parser');
 var spawn = require('child_process').spawn;
 
-const fs = require('fs')
-const https = require('https')
+const fs = require('fs');
+const https = require('https');
+
+const CONFIG = require('./config.json');
 
 //var urlencodedParser = bodyParser.urlencoded({ extended: false });
 //const jsonParser = bodyParser.json();
@@ -15,7 +17,8 @@ const MC_SERVER_MEMORY = 4;
 const MC_JARFILE_NAME = 'mc_server_paper_1_16_5.jar'
 
 // Timeout to stop the instance after.
-const TIMEOUT = 300000
+const TIMEOUT = CONFIG.timeout;
+const KEY = CONFIG.key;
 
 const ACTION = {
     leaving: 0,
@@ -32,6 +35,9 @@ const STATUS = {
 class MacawServer {
     constructor() {
         this._app = express();
+        this._app.use(bodyParser.urlencoded({extended: false}));
+        this._app.use(bodyParser.json());
+
         this._port = 8080
 
         this._mc_server = null;
@@ -66,7 +72,13 @@ class MacawServer {
 
         // Stop the Minecraft server
         this._app.get('/stop', (req, res) => {
-            this._MCShutdown();
+            if (req.query.key === KEY) {
+                this._MCShutdown();
+                res.status(200).end();
+            }
+            else {
+                res.status(401).end();
+            }
         });
         
         // Start the Minecraft server
@@ -76,17 +88,28 @@ class MacawServer {
         
         // Stop the AWS EC2 instance.
         this._app.get('/kill', (req, res) => {
-            this._fullShutdown();
+            if (req.query.key === KEY) {
+                this._fullShutdown();
+                res.status(200).end();
+            }
+            else {
+                res.status(401).end();
+            }
         });
 
         // Get the Minecraft server status.
         this._app.get('/status', (req, res) => {
-            const status = {
-                status: this._mc_status,
-                players: this._players
-            }
+            if (req.query.key === KEY) {
+                const status = {
+                    status: this._mc_status,
+                    players: this._players
+                }
 
-            res.json(status);
+                res.json(status);
+            }
+            else {
+                res.status(401).end();
+            }
         })
     }
 
