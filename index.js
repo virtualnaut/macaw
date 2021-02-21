@@ -14,7 +14,7 @@ const CONFIG = require('./config.json');
 const MC_SERVER_MEMORY = 4;
 
 // Name of the Minecraft server JAR file.
-const MC_JARFILE_NAME = 'mc_server_paper_1_16_5.jar'
+const MC_JARFILE_NAME = '/home/ec2-user/mc-serv-paper/mc_server_paper_1_16_5.jar'
 
 // Timeout to stop the instance after.
 const TIMEOUT = CONFIG.timeout;
@@ -55,7 +55,7 @@ class MacawServer {
             this._log(`Macaw Server connected on port ${this._port}.`);
         
             // Start the Minecraft server.
-            this._mc_server = spawn('sudo', ['java', `-Xmx${MC_SERVER_MEMORY}G`, '-jar', MC_JARFILE_NAME, 'nogui']);
+            this._mc_server = spawn('sudo', ['/usr/bin/java', `-Xmx${MC_SERVER_MEMORY}G`, '-jar', MC_JARFILE_NAME, 'nogui']);
             this._mc_status = STATUS.STARTING;
 
             // Echo the server output
@@ -115,6 +115,8 @@ class MacawServer {
 
     _gotLogLine(data) {
         const line = String(data);
+
+        fs.appendFile('./log.txt', line, err => {if (err) throw err;});
     
         let player = null;
         let action = null;
