@@ -113,7 +113,7 @@ class MacawServer {
         });
 
         // Issue a command to the Minecraft server.
-        this._app.get('/issue', urlencodedParser, jsonParser, (req, res) => {
+        this._app.post('/issue', urlencodedParser, jsonParser, (req, res) => {
 
             if (req.query.key !== KEY) {
                 res.status(401).end();
