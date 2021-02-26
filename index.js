@@ -164,8 +164,9 @@ class MacawServer {
             this._startShutdownTimer();
         }
 
-        else if (line.includes('Closing Server') && (this._stop_instance)) {
+        else if (line.includes('Closing Server')) {
             this._mc_status = STATUS.NOT_RUNNING;
+
             if (this._stop_instance) {
                 spawn('sudo', ['shutdown', 'now']);
             }
