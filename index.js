@@ -7,8 +7,8 @@ const https = require('https');
 
 const CONFIG = require('./config.json');
 
-//var urlencodedParser = bodyParser.urlencoded({ extended: false });
-//const jsonParser = bodyParser.json();
+var urlencodedParser = bodyParser.urlencoded({ extended: false });
+const jsonParser = bodyParser.json();
 
 // Number of GB to allocate to the Minecraft server.
 const MC_SERVER_MEMORY = 4;
@@ -53,7 +53,7 @@ class MacawServer {
         }, this._app).listen(this._port, () => {
 
             this._log(`Macaw Server connected on port ${this._port}.`);
-        
+
             // Start the Minecraft server.
             this._mc_server = spawn('sudo', ['/usr/bin/java', `-Xmx${MC_SERVER_MEMORY}G`, '-jar', MC_JARFILE_NAME, 'nogui']);
             this._mc_status = STATUS.STARTING;
@@ -110,7 +110,33 @@ class MacawServer {
             else {
                 res.status(401).end();
             }
-        })
+        });
+
+        // Issue a command to the Minecraft server.
+        this._app.get('/issue', urlencodedParser, jsonParser, (req, res) => {
+
+            if (req.query.key !== KEY) {
+                res.status(401).end();
+                return;
+            }
+
+            if (this._mc_status !== STATUS.RUNNING) {
+                res.status(503).send('Minecraft server not running');
+                return;
+            }
+
+            if (!req.body.hasOwnProperty('command')) {
+                res.status(400).send('No command specified');
+                return
+            }
+
+            const command = req.body.command;
+
+            this._log(`Command issued by ${req.socket.remoteAddress}: ${command}`);
+            this._mc_server.stdin.write(`${command}\n`);
+
+            res.status(200).end();
+        });
     }
 
     _gotLogLine(data) {
